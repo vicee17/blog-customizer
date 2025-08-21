@@ -12,7 +12,7 @@ export const Article = () => {
 			fontFamily: 'var(--font-family, inherit)',
         	fontSize: 'var(--font-size, 18px)',
         	color: 'var(--font-color, #000000)',
-        	backgroundColor: 'var(--background-color, #ffffff)',
+        	backgroundColor: 'var(--bg-color, #ffffff)',
         	maxWidth: 'var(--container-width, auto)',
 		}}>
 			<Text as='h1' size={45} weight={800} uppercase dynamicLite>

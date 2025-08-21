@@ -1,6 +1,6 @@
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Select } from 'src/ui/select';
 import { RadioGroup } from 'src/ui/radio-group';
 import {
@@ -12,33 +12,53 @@ import {
   	defaultArticleState,
   	ArticleStateType
 } from '../../constants/articleProps'
+import { useOutsideClickClose } from 'src/ui/select/hooks/useOutsideClickClose';
 
 import styles from './ArticleParamsForm.module.scss';
 import clsx from 'clsx';
 
 type ArticleParamsFormProps = {
 	isFixedOpen?: boolean,
-	isFixedClose?: boolean
-	mainRef: React.RefObject<HTMLElement>
+	isFixedClose?: boolean,
+	currentArticleState: ArticleStateType,
+	onApplyState: (newState: ArticleStateType) => void
 }
 
 export const ArticleParamsForm = ({
 	isFixedOpen = false,
 	isFixedClose = false,
-	mainRef
+	currentArticleState,
+	onApplyState
 }: ArticleParamsFormProps) => {
 
+	const sidebarRef = useRef<HTMLDivElement>(null);
 	const [ isOpen, setIsOpen ] = useState(false);
 
-	const [ formState, setFormState ] = useState({
-		fontFamily: defaultArticleState.fontFamilyOption,
-		fontSize: defaultArticleState.fontSizeOption,
-		fontColor: defaultArticleState.fontColor,
-		backgroundColor: defaultArticleState.backgroundColor,
-		contentWidth: defaultArticleState.contentWidth
-	})
+	const [formState, setFormState] = useState({
+    fontFamilyOption: currentArticleState.fontFamilyOption,
+    fontSizeOption: currentArticleState.fontSizeOption,
+    fontColor: currentArticleState.fontColor,
+    backgroundColor: currentArticleState.backgroundColor,
+    contentWidth: currentArticleState.contentWidth
+  });
+
+  useEffect(() => {
+    setFormState({
+      fontFamilyOption: currentArticleState.fontFamilyOption,
+      fontSizeOption: currentArticleState.fontSizeOption,
+      fontColor: currentArticleState.fontColor,
+      backgroundColor: currentArticleState.backgroundColor,
+      contentWidth: currentArticleState.contentWidth
+    });
+  }, [currentArticleState]);
 
 	const isPanelOpen = isFixedOpen ? true : isFixedClose ? false : isOpen;
+
+	useOutsideClickClose({
+    	isOpen: isPanelOpen && !isFixedOpen, 
+    	rootRef: sidebarRef, 
+    	onChange: setIsOpen, 
+  	});
 
 	const handleTogglePanel = () => {
 		if (!isFixedOpen && !isFixedClose) {
@@ -46,66 +66,59 @@ export const ArticleParamsForm = ({
 		}
 	}
 
-	const applyStyles = (state: typeof formState) => {
-		if (mainRef.current) {
-			const main = mainRef.current;
-
-			main.style.setProperty('--font-family', state.fontFamily.value);
-			main.style.setProperty('--font-size', state.fontSize.value);
-			main.style.setProperty('--font-color', state.fontColor.value);
-			main.style.setProperty('--bg-color', state.backgroundColor.value);
-			main.style.setProperty('--container-width', state.contentWidth.value);
-		}
-	}
-
 	const handlerReset = () => {
-		const defaultState = {
-      		fontFamily: defaultArticleState.fontFamilyOption,
-      		fontSize: defaultArticleState.fontSizeOption,
+    	const resetState = {
+      		fontFamilyOption: defaultArticleState.fontFamilyOption,
+      		fontSizeOption: defaultArticleState.fontSizeOption,
       		fontColor: defaultArticleState.fontColor,
       		backgroundColor: defaultArticleState.backgroundColor,
-      		contentWidth: defaultArticleState.contentWidth,
+     		contentWidth: defaultArticleState.contentWidth
     	};
-
-		setFormState(defaultState);
-		applyStyles(defaultState);
-	}
+    
+    	setFormState(resetState);
+    	onApplyState({
+      	...defaultArticleState,
+      	fontFamilyOption: defaultArticleState.fontFamilyOption,
+      	fontSizeOption: defaultArticleState.fontSizeOption
+    	});
+  	}
 
 	const handlerSubmit = (event: React.FormEvent) => {
-		event.preventDefault();
-		applyStyles(formState);
-		
-		console.log('Применены стили:', {
-      		fontFamily: formState.fontFamily,
-      		fontSize: formState.fontSize,
+    	event.preventDefault();
+
+    	onApplyState({
+      		...currentArticleState,
+      		fontFamilyOption: formState.fontFamilyOption,
+      		fontSizeOption: formState.fontSizeOption,
       		fontColor: formState.fontColor,
       		backgroundColor: formState.backgroundColor,
-      		contentWidth: formState.contentWidth,
+      		contentWidth: formState.contentWidth
     	});
-	}
+  	}
  
 	return (
 		<>
 			<ArrowButton isOpen={isPanelOpen} onClick={handleTogglePanel} />
-			<aside className={clsx(styles.container, {[styles.container_open]: isPanelOpen})}>
+			<aside className={clsx(styles.container, {[styles.container_open]: isPanelOpen})} ref={sidebarRef}>
 				<form className={styles.form} onSubmit={handlerSubmit}>
+					<h1 className={styles.container_title}>задайте параметры</h1>
 					<Select 
 						title='шрифт'
-						selected={formState.fontFamily}
+						selected={formState.fontFamilyOption}
 						options={fontFamilyOptions}
 						onChange={(option) => setFormState(prev => ({
 							...prev,
-							fontFamily: option
+							fontFamilyOption: option
 						}))}
 					/>
 					<RadioGroup 
 						name='fontSize'
 						title='размер шрифта'
 						options={fontSizeOptions}
-						selected={formState.fontSize}
+						selected={formState.fontSizeOption}
 						onChange={(option) => setFormState(prev => ({
 							...prev,
-							fontSize: option
+							fontSizeOption: option
 						}))}
 					/>
 					<Select 
